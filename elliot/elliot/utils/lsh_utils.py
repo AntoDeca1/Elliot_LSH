@@ -210,7 +210,7 @@ def create_color_map(unique_combinations):
     return color_map
 
 
-def plot_pareto_frontier(experiments_data, pareto_efficient_points, unique_combinations, color_map):
+def plot_pareto_frontier(experiments_data, pareto_efficient_points, unique_combinations, color_map, plot_dir):
     plt.figure(figsize=(20, 10))  # Further increased width to 20
     for i, row in experiments_data.iterrows():
         color = color_map[unique_combinations[
@@ -243,12 +243,15 @@ def plot_pareto_frontier(experiments_data, pareto_efficient_points, unique_combi
     else:
         plt.legend(title="Configurations", loc='center left', bbox_to_anchor=(1.15, 0.5), ncol=2)
 
+    plot_name = "scatter"
+
     plt.grid(True)
-    plt.tight_layout(rect=[0, 0, 0.75, 1] if len(unique_combinations) > 12 else [0, 0, 1, 1])  # Adjust plot area
+    plt.tight_layout(rect=[0, 0, 0.75, 1] if len(unique_combinations) > 12 else [0, 0, 1, 1])
+    plt.savefig(os.path.join(plot_dir, plot_name))
     plt.show()
 
 
-def plot_pareto_only(pareto_efficient_points, unique_combinations, color_map):
+def plot_pareto_only(pareto_efficient_points, unique_combinations, color_map, plot_dir):
     plt.figure(figsize=(20, 10))  # Further increased width to 20
     for _, row in pareto_efficient_points.iterrows():
         color = color_map[unique_combinations[
@@ -264,14 +267,17 @@ def plot_pareto_only(pareto_efficient_points, unique_combinations, color_map):
     plt.ylabel('NDCG Loss (%)')
     plt.title('Pareto Efficient Points')
 
+    plot_name = "pareto_scatter"
+
     plt.legend(title="Configurations", loc='center left', bbox_to_anchor=(1.15, 0.5), ncol=2)
     plt.grid(True)
     plt.tight_layout(rect=[0, 0, 0.75, 1])
+    plt.savefig(os.path.join(plot_dir, plot_name))
     plt.show()
 
 
 def plot_pareto_bars(experiments_data, color_map, unique_combinations, pareto_efficient_points, value_column, ylabel,
-                     title):
+                     title, plot_dir):
     pareto_data = experiments_data.loc[pareto_efficient_points.index]
     sorted_data = pareto_data.sort_values(by=value_column, ascending=False).reset_index(drop=True)
 
@@ -303,13 +309,19 @@ def plot_pareto_bars(experiments_data, color_map, unique_combinations, pareto_ef
                                           label=f'Pareto nbits={row["nbits"]}, ntables={row["ntables"]}'))
 
     # Adding legend to the figure
+    plot_name = "pareto_bars"
+    if "similarity" in title.lower().strip(""):
+        plot_name += "similarity"
+    else:
+        plot_name += "ndcg_loss"
     ax.legend(handles=legend_elements, title="Pareto Configurations", loc='center left', bbox_to_anchor=(1.02, 0.5),
               ncol=2)
     plt.subplots_adjust(right=0.75)
+    plt.savefig(os.path.join(plot_dir, plot_name))
     plt.show()
 
 
-def plot_similarity_time_bar(experiments_data, color_map, unique_combinations):
+def plot_similarity_time_bar(experiments_data, color_map, unique_combinations, plot_dir):
     sorted_data = experiments_data.sort_values(by='similarity_time_decrease_percent', ascending=False).reset_index(
         drop=True)
     num_experiments = len(sorted_data)
@@ -352,12 +364,14 @@ def plot_similarity_time_bar(experiments_data, color_map, unique_combinations):
                                           label=f'nbits={row["nbits"]}, ntables={row["ntables"]}'))
 
     # Adding legend to the figure
+    plot_name = "similarity_bar"
     ax1.legend(handles=legend_elements, title="Configurations", loc='center left', bbox_to_anchor=(1.02, 0.5), ncol=2)
     plt.subplots_adjust(right=0.75, hspace=0.5)
+    plt.savefig(os.path.join(plot_dir, plot_name))
     plt.show()
 
 
-def plot_ndcg_loss_bar(experiments_data, color_map, unique_combinations):
+def plot_ndcg_loss_bar(experiments_data, color_map, unique_combinations, plot_dir):
     sorted_data = experiments_data.sort_values(by='NDCG_loss_percent', ascending=False).reset_index(drop=True)
     num_experiments = len(sorted_data)
     half_point = num_experiments // 2
@@ -399,12 +413,14 @@ def plot_ndcg_loss_bar(experiments_data, color_map, unique_combinations):
                                           label=f'nbits={row["nbits"]}, ntables={row["ntables"]}'))
 
     # Adding legend to the figure
+    plot_name = "ndgc_loss"
     ax1.legend(handles=legend_elements, title="Configurations", loc='center left', bbox_to_anchor=(1.02, 0.5), ncol=2)
     plt.subplots_adjust(right=0.75, hspace=0.5)
+    plt.savefig(os.path.join(plot_dir, plot_name))
     plt.show()
 
 
-def print_pareto_details(pareto_efficient_points, baseline_data):
+def print_pareto_details(pareto_efficient_points, baseline_data, plot_dir):
     print("\nPareto Efficient Experiments:")
     for idx, row in pareto_efficient_points.iterrows():
         print(f"Model: {row['model']}")
@@ -416,17 +432,26 @@ def print_pareto_details(pareto_efficient_points, baseline_data):
         print(f"  nbits: {row['nbits']}")
         print(f"  ntables: {row['ntables']}")
         print("-" * 40)
-
+    file_name = "pareto_points.csv"
     print("\nBaseline Details:")
     print(f"Model: {baseline_data['model'].iloc[0]}")
     print(f"  nDCG Rendle 2020: {baseline_data['nDCGRendle2020'].iloc[0]}")
     print(f"  Similarity Time: {baseline_data['similarity_time'].iloc[0]} seconds")
+    pareto_efficient_points.to_csv(os.path.join(plot_dir, file_name))
 
 
 def find_best_experiment_static(baseline_path, experiments_path):
     # Load the data
     baseline_data = pd.read_csv(baseline_path, sep='\t')
     experiments_data = pd.read_csv(experiments_path, sep='\t')
+
+    base_path = "/".join(baseline_path.split("/")[:-1], )
+
+    dir_name = experiments_path.split("/")[-1].split(".")[0] + "_comparison"
+
+    # Directory where all the plots will be saved
+    plot_dir = os.path.join(base_path, dir_name)
+    os.makedirs(plot_dir, exist_ok=True)
 
     # Extract baseline metrics
     baseline_ndcg = baseline_data['nDCGRendle2020'].iloc[0]
@@ -459,18 +484,18 @@ def find_best_experiment_static(baseline_path, experiments_path):
     color_map = create_color_map(unique_combinations)
 
     # Plotting results with matplotlib
-    plot_pareto_frontier(experiments_data, pareto_efficient_points, unique_combinations, color_map)
+    plot_pareto_frontier(experiments_data, pareto_efficient_points, unique_combinations, color_map, plot_dir)
     if len(unique_combinations) > 12:
-        plot_pareto_only(pareto_efficient_points, unique_combinations, color_map)
-    plot_similarity_time_bar(experiments_data, color_map, unique_combinations)
-    plot_ndcg_loss_bar(experiments_data, color_map, unique_combinations)
+        plot_pareto_only(pareto_efficient_points, unique_combinations, color_map, plot_dir)
+    plot_similarity_time_bar(experiments_data, color_map, unique_combinations, plot_dir)
+    plot_ndcg_loss_bar(experiments_data, color_map, unique_combinations, plot_dir)
     plot_pareto_bars(experiments_data, color_map, unique_combinations, pareto_efficient_points,
                      'similarity_time_decrease_percent', 'Similarity Time Decrease (%)',
-                     'Pareto Efficient Similarity Time Decrease')
+                     'Pareto Efficient Similarity Time Decrease', plot_dir)
     plot_pareto_bars(experiments_data, color_map, unique_combinations, pareto_efficient_points,
-                     'NDCG_loss_percent', 'NDCG Loss Percent', 'Pareto Efficient NDCG Loss')
+                     'NDCG_loss_percent', 'NDCG Loss Percent', 'Pareto Efficient NDCG Loss', plot_dir)
 
     # Print comprehensive comparison and best experiment details
-    print_pareto_details(pareto_efficient_points, baseline_data)
+    print_pareto_details(pareto_efficient_points, baseline_data, plot_dir)
 
     return pareto_efficient_points
