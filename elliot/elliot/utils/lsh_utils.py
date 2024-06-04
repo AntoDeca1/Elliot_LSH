@@ -15,9 +15,14 @@ def plot_and_save_results(trials, config, print_csv=True):
     # Determine the number of subplots needed
 
     # Create a results directory if it doesn't exist
-    results_dir = 'results_lsh'  # Potrei prenderlo dal file di configurazione
+    results_dir = 'results_lsh/experiments'
     # results_dir = config.results_dir
     os.makedirs(results_dir, exist_ok=True)
+
+    results_subdir = config["experiment"]["dataset"]
+
+    final_path = os.path.join(results_dir, results_subdir)
+    os.makedirs(final_path, exist_ok=True)
 
     for model_name, experiments in trials.items():
         metrics_names = [mname for mname, _ in experiments[0]["test_results"][cutoff].items()]
@@ -66,7 +71,7 @@ def plot_and_save_results(trials, config, print_csv=True):
 
         # Generate directory name for current model with date
         today = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        model_results_dir = os.path.join(results_dir, f"{model_name_full}_{today}")
+        model_results_dir = os.path.join(final_path, f"{model_name_full}_{today}")
         os.makedirs(model_results_dir, exist_ok=True)
 
         # Plot each metric in a different subplot and save the final plot
@@ -299,7 +304,7 @@ def plot_pareto_bars(experiments_data, color_map, unique_combinations, pareto_ef
 
     # Adding legend to the figure
     ax.legend(handles=legend_elements, title="Pareto Configurations", loc='center left', bbox_to_anchor=(1.02, 0.5),
-               ncol=2)
+              ncol=2)
     plt.subplots_adjust(right=0.75)
     plt.show()
 
