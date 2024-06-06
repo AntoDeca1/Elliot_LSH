@@ -1,5 +1,5 @@
 import numpy as np
-from .utils import stringify_array
+from ..LSH_v4.utils import stringify_array
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import defaultdict
 import time

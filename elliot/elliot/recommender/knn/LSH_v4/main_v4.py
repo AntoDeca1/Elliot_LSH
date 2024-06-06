@@ -1,6 +1,6 @@
 import numpy as np
 from LSH_v4 import RandomProjections
-from ..LSH_v4.utils import  create_sparse_matrix
+from ..LSH_v4.utils import create_sparse_matrix, average_number_of_nempty_buckets
 import time
 from sklearn.metrics.pairwise import cosine_similarity
 
@@ -39,3 +39,6 @@ start = time.time()
 rp.search_2(k=neighbours)
 end = time.time()
 print("Time to compute the retrieve the candidates with LSH", end - start)
+
+print("Average Number of non empty buckets")
+average_number_of_nempty_buckets(rp.mapping_)
