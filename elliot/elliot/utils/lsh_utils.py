@@ -7,6 +7,7 @@ import os
 import plotly.graph_objs as go
 import plotly.express as px
 import numpy as np
+from pathlib import Path
 
 
 def plot_and_save_results(trials, config, print_csv=True):
@@ -499,3 +500,39 @@ def find_best_experiment_static(baseline_path, experiments_path):
     print_pareto_details(pareto_efficient_points, baseline_data, plot_dir)
 
     return pareto_efficient_points
+
+
+def average_column_from_subdirectories(main_directory):
+    data_frames = []
+    main_path = Path(main_directory)
+    group_cols = ['Model', 'neighbors', 'ntables', 'nbits']
+    columns_to_average = ['nDCGRendle2020', 'Recall', 'HR', 'Precision', 'MAP', 'MRR', 'similarity_time',
+                          'indexing_time', 'candidates_retrieval_time', 'similarity_matrix_time',
+                          'nDCGRendle2020_pct_change', 'Recall_pct_change', 'HR_pct_change', 'Precision_pct_change',
+                          'MAP_pct_change', 'MRR_pct_change', 'similarity_time_pct_change', 'indexing_time_pct_change',
+                          'candidates_retrieval_time_pct_change', 'similarity_matrix_time_pct_change']
+
+    for subdirectory in main_path.iterdir():
+        if subdirectory.is_dir():
+            # Find all CSV files in the subdirectory
+            csv_files = list(subdirectory.glob('*.csv'))
+
+            # Ensure there is exactly one CSV file in the subdirectory
+            if len(csv_files) == 1:
+                csv_file_path = csv_files[0]
+                df = pd.read_csv(csv_file_path)
+                data_frames.append(df)
+            else:
+                print(f"Warning: {subdirectory} contains {len(csv_files)} CSV files.")
+
+    if not data_frames:
+        raise ValueError("No valid CSV files found in the subdirectories.")
+
+    # Concatenate all dataframes to ensure they have the same structure
+    combined_df = pd.concat(data_frames)
+
+    # Group by all columns except the specified one and compute the mean of the specified column
+
+    averaged_df = combined_df.groupby(group_cols, as_index=False)[columns_to_average].mean()
+
+    return averaged_df

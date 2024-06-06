@@ -15,6 +15,7 @@ from ..LSH_v3.LSH_v3 import RandomProjections as LSH_noHamming
 from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing as mp
 from tqdm import tqdm
+import gc
 import torch
 import pyximport
 from opt_einsum import contract
@@ -176,10 +177,15 @@ class Similarity(object):
         candidates_retrieval_time = time.time() - prima
         print(candidates_retrieval_time, "Time to pull out the candidates")
         self._lsh_times_obj["candidates_retrieval_time"] = candidates_retrieval_time
+        prima = time.time()
+        del rp
+        print("Time taken to remove the object from memory", time.time() - prima)
+        # gc.collect()
 
         prima = time.time()
         data, rows_indices, cols_indptr = self.compute_candidates_cosine_similarity_fast(user_item_matrix,
                                                                                          candidates_matrix)
+
         similarity_matrix_time = time.time() - prima
         print(similarity_matrix_time, "Time for calculating the similarity matrix")
         self._lsh_times_obj["similarity_matrix_time"] = similarity_matrix_time

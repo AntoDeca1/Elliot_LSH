@@ -1,3 +1,4 @@
+import gc
 import pickle
 
 import numpy as np
@@ -67,7 +68,7 @@ class Similarity(object):
 
         print(f"Similarity used : {self._similarity} with {self._num_neighbors} neighbors")
 
-        self._similarity_matrix = np.zeros((len(self._items), len(self._items)))
+        self._similarity_matrix = np.empty((len(self._items), len(self._items)))
 
         data, rows_indices, cols_indptr = [], [], []
         if self._similarity in ["rp_faiss", "rp_custom"]:
@@ -270,7 +271,11 @@ class Similarity(object):
             candidates_matrix = rp.search_2(k=self._num_neighbors)
         candidates_retrieval_time = time.time() - prima
         print(candidates_retrieval_time, "Time to pull out the candidates")
+        # The item_user_matrix
         self._lsh_times_obj["candidates_retrieval_time"] = candidates_retrieval_time
+        # CHECK IF IT MAKES TO SENSE TO DO SO: Idea: Evoid this pattern in the similarity_matrix_time
+        del rp
+        # gc.collect()
         prima = time.time()
         data, rows_indices, cols_indptr = self.compute_candidates_cosine_similarity_fast(item_user_matrix,
                                                                                          candidates_matrix)

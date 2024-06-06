@@ -1,6 +1,6 @@
 experiment:
   backend: pytorch
-  dataset: movielens_1m_hash_less
+  dataset: movielens_1m
   data_config:
     strategy: dataset
     dataset_path: ../data/movielens_1m/dataset.tsv
@@ -23,8 +23,8 @@ experiment:
     simple_metrics: [ nDCGRendle2020, Recall, HR, Precision, MAP, MRR ] #nDCG
   gpu: 1
   external_models_path: ../external/models/__init__.py
-  #plot_lsh: True #Plot lsh results
-  comparison_lsh: True #Added field just to trigger the function that saves the results in a separate folder(To set only when we run the final experiments)
+  plot_lsh: True #Plot lsh results
+  #comparison_lsh: True #Added field just to trigger the function that saves the results in a separate folder(To set only when we run the final experiments)
   models:
     ItemKNN:
       meta:
@@ -33,7 +33,7 @@ experiment:
         #hyper_max_evals: 20
         hyper_opt_alg: grid #tpe
       neighbors: 200
-      nbits: [ 2,4,6,8,9,10 ] #[ 4,8,12,16,32,64,128 ]
-      ntables: [ 2,3,4,6,8,9,10 ]  #[ 1,2,4,8,12,16 ] #Set to 1 for a comparison with rp_faiss
-      similarity: rp_hashtables #[cosine,rp_custom,rp_faiss,rp_hashtables]
+      nbits: [ 2,50, 100,150,200,250,300 ] #[ 4,8,12,16,32,64,128 ]
+      ntables: 1 #[ 1,2,4,8,12,16 ] #Set to 1 for a comparison with rp_faiss
+      similarity: rp_faiss #[cosine,rp_custom,rp_faiss,rp_hashtables]
 
